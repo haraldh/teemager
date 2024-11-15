@@ -84,5 +84,5 @@ in {
   #networking.hostName = lib.mkDefault "nixos";
 
   formatAttr = lib.mkForce "finalImage";
-  fileExtension = lib.mkForce "-image";
+  fileExtension = lib.mkForce ".raw";
 }

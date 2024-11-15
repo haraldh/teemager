@@ -24,5 +24,5 @@
   networking.hostName = lib.mkDefault "uki";
 
   formatAttr = lib.mkForce "uki";
-  fileExtension = lib.mkForce "-uki";
+  fileExtension = lib.mkForce ".efi";
 }
