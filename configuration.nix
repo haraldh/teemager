@@ -12,7 +12,7 @@
 
   environment.systemPackages = with pkgs; [
     tdx_attest
-    teepot.teepot.tee_self_attestation_test
+    teepot.teepot
     openssl
     curl
     nixsgx.sgx-dcap.quote_verify
