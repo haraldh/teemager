@@ -12,12 +12,22 @@ in {
     "${toString modulesPath}/image/repart.nix"
   ];
 
-  ec2.efi = true;
+  #ec2.efi = true;
 
   fileSystems = {
     "/" = {
       fsType = "tmpfs";
-      options = ["mode=0755"];
+      options = ["mode=0755" "noexec"];
+    };
+
+    "/dev/shm" = {
+      fsType = "tmpfs";
+      options = ["defaults" "nosuid" "noexec" "nodev" "size=2G"];
+    };
+
+    "/run" = {
+      fsType = "tmpfs";
+      options = ["defaults" "mode=0755" "nosuid" "noexec" "nodev" "size=512M"];
     };
 
     "/usr" = {
@@ -78,7 +88,6 @@ in {
     "panic=30"
     "boot.panic_on_fail" # reboot the machine upon fatal boot issues
     "lockdown=1"
-    "console=ttyS0,115200n8"
     "random.trust_cpu=on"
   ];
   #networking.hostName = lib.mkDefault "nixos";
