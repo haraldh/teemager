@@ -12,6 +12,24 @@
     ./google.nix
   ];
 
+  environment.systemPackages = with pkgs; [
+    teepot.teepot
+    openssl
+    strace
+    nixsgx.sgx-dcap.quote_verify
+    nixsgx.sgx-dcap.default_qpl
+    cryptsetup
+    google-guest-agent
+  ];
+
+  programs.nix-ld.enable = true;
+
+  # Sets up all the libraries to load
+  programs.nix-ld.libraries = with pkgs; [
+    nixsgx.sgx-dcap.quote_verify
+    curl
+  ];
+
   services.timesyncd.enable = false;
   services.chrony = {
     enable = true;
@@ -45,24 +63,6 @@
       preferBuiltin = false;
   });
   */
-
-  environment.systemPackages = with pkgs; [
-    teepot.teepot
-    openssl
-    strace
-    nixsgx.sgx-dcap.quote_verify
-    nixsgx.sgx-dcap.default_qpl
-    cryptsetup
-    google-guest-agent
-  ];
-
-  programs.nix-ld.enable = true;
-
-  # Sets up all the libraries to load
-  programs.nix-ld.libraries = with pkgs; [
-    nixsgx.sgx-dcap.quote_verify
-    curl
-  ];
 
   environment.etc."sgx_default_qcnl.conf" = {
     user = "root";
