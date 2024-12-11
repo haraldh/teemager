@@ -1,27 +1,28 @@
 {
   inputs = {
-    nixpkgs.url = "nixpkgs/nixos-24.11";
-    nixos-generators = {
-      url = "github:nix-community/nixos-generators";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    tdx-attest.url = "github:haraldh/tdx-attest";
-    teepot-flake.url = "github:matter-labs/teepot?ref=f661c8b975b37f45a69fd0a12c7d54f6bdf18f8b";
     nixsgx-flake.url = "github:matter-labs/nixsgx";
+    nixpkgs.follows = "nixsgx-flake/nixpkgs";
+    teepot-flake = {
+      url = "github:matter-labs/teepot?ref=6b2894174fc35823eb541dbbd66fb0f3178cff3e";
+      inputs.nixsgx-flake.follows = "nixsgx-flake";
+    };
   };
   outputs = {
     self,
     nixpkgs,
     ...
   } @ inputs: let
+    nixosGenerate = import ./nixos-generate.nix;
+
+    overlays = with inputs; [
+      teepot-flake.overlays.default
+      nixsgx-flake.overlays.default
+    ];
+
     pkgsForSystem = system:
       import nixpkgs {
         inherit system;
-        overlays = with inputs; [
-          (final: prev: {tdx_attest = tdx-attest.packages.${system}.tdx_attest;})
-          teepot-flake.overlays.default
-          nixsgx-flake.overlays.default
-        ];
+        inherit overlays;
       };
     allVMs = ["x86_64-linux"];
     forAllVMs = f:
@@ -36,29 +37,46 @@
       system,
       pkgs,
     }: {
-      verity = inputs.nixos-generators.nixosGenerate {
-        system = system;
-        specialArgs = {
-          pkgs = pkgs;
-        };
+      verity = nixosGenerate {
+        inherit (nixpkgs) lib;
+        inherit (nixpkgs.lib) nixosSystem;
+        inherit system pkgs;
         modules = [
           ./configuration.nix
         ];
-        customFormats = {"verity" = ./formats/verity.nix;};
+        formatModule = ./formats/verity.nix;
         format = "verity";
       };
-      uki = inputs.nixos-generators.nixosGenerate {
-        system = system;
-        specialArgs = {
-          pkgs = pkgs;
-        };
+
+      uki = nixosGenerate {
+        inherit (nixpkgs) lib;
+        inherit (nixpkgs.lib) nixosSystem;
+        inherit system pkgs;
         modules = [
           ./configuration.nix
         ];
-        customFormats = {"uki" = ./formats/uki.nix;};
+        formatModule = ./formats/uki.nix;
         format = "uki";
       };
     });
+
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
+
+    devShells = forAllSystems (
+      system: let
+        pkgs = pkgsForSystem system;
+      in {
+        default = pkgs.callPackage ./devShell.nix {};
+      }
+    );
+
+    nixosConfigurations.test = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        {nixpkgs.overlays = overlays;}
+        ./formats/test.nix
+        ./configuration.nix
+      ];
+    };
   };
 }

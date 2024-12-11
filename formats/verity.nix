@@ -12,8 +12,6 @@ in {
     "${toString modulesPath}/image/repart.nix"
   ];
 
-  #ec2.efi = true;
-
   fileSystems = {
     "/" = {
       fsType = "tmpfs";
@@ -47,7 +45,6 @@ in {
   image.repart = {
     verityStore = {
       enable = true;
-      # by default the module works with systemd-boot, for simplicity this test directly boots the UKI
       ukiPath = "/EFI/BOOT/BOOTx64.EFI";
     };
 
@@ -65,6 +62,7 @@ in {
       };
       ${partitionIds.store}.repartConfig = {
         Minimize = "best";
+        Format = "squashfs";
       };
     };
   };
@@ -82,7 +80,7 @@ in {
   # don't create /usr/bin/env
   # this would require some extra work on read-only /usr
   # and it is not a strict necessity
-  system.activationScripts.usrbinenv = lib.mkForce "";
+  #system.activationScripts.usrbinenv = lib.mkForce "";
 
   boot.kernelParams = [
     "panic=30"
@@ -90,8 +88,26 @@ in {
     "lockdown=1"
     "random.trust_cpu=on"
   ];
-  #networking.hostName = lib.mkDefault "nixos";
 
-  formatAttr = lib.mkForce "finalImage";
+  system.build.vmdk_verity =
+    config.system.build.finalImage.overrideAttrs
+    (
+      finalAttrs: previousAttrs: {
+        nativeBuildInputs =
+          previousAttrs.nativeBuildInputs
+          ++ [
+            pkgs.qemu
+          ];
+
+        postInstall = ''
+          qemu-img convert -f raw -O vmdk \
+            $out/${config.image.repart.imageFileBasename}.raw \
+            $out/${config.image.repart.imageFileBasename}.vmdk
+          rm -f $out/${config.image.repart.imageFileBasename}.raw
+        '';
+      }
+    );
+
+  formatAttr = lib.mkForce "vmdk_verity";
   fileExtension = lib.mkForce ".raw";
 }

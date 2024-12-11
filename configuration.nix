@@ -10,42 +10,71 @@
     #./amazon.nix
   ];
 
+  # ec2.enabled = true;
+
+  system.image.id = "test_tdx";
+
+  environment.etc."issue.d/ip.issue".text = "\\4\n";
+  networking.dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
+
+  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
+  /*
+  boot.kernelPackages = pkgs.linuxPackagesFor (pkgs.linux_latest.override {
+    structuredExtraConfig = with lib.kernel; {
+     VIDEO = no;
+     SOUND = no;
+     VIRT_DRIVERS = yes;
+     VIRTIO_MMIO_CMDLINE_DEVICES = yes;
+    };
+    ignoreConfigErrors = true;
+      autoModules = false;
+      preferBuiltin = false;
+  });
+  */
+
   environment.systemPackages = with pkgs; [
-    tdx_attest
     teepot.teepot
     openssl
     curl
+    strace
     nixsgx.sgx-dcap.quote_verify
     nixsgx.sgx-dcap.default_qpl
   ];
+
+  environment.etc."sgx_default_qcnl.conf" = {
+    user = "root";
+    group = "root";
+    mode = "0644";
+    source = "${pkgs.nixsgx.sgx-dcap.default_qpl}/etc/sgx_default_qcnl.conf";
+  };
 
   environment.variables = {
     QCNL_CONF_PATH = "${pkgs.nixsgx.sgx-dcap.default_qpl}/etc/sgx_default_qcnl.conf";
   };
 
-  system.image.id = "nixos-appliance-test";
-
-  boot.enableContainers = lib.mkDefault false;
   boot.initrd.systemd.enable = lib.mkDefault true;
   boot.kernelParams = [
     "console=ttyS0,115200n8"
   ];
+
   boot.initrd.availableKernelModules = [
     "tdx_guest"
+    "nvme"
   ];
 
   services.logind.extraConfig = ''
     NAutoVTs=0
     ReserveVT=0
   '';
-  console.enable = false;
+  #  console.enable = false;
+
+  services.dbus.implementation = "broker";
 
   #services.getty.autologinUser = lib.mkOverride 999 "root";
 
   boot.initrd.systemd.tpm2.enable = lib.mkForce false;
   systemd.tpm2.enable = lib.mkForce false;
 
-  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
   documentation.info.enable = lib.mkForce false;
   documentation.nixos.enable = lib.mkForce false;
   documentation.man.enable = lib.mkForce false;
@@ -54,20 +83,31 @@
   networking.useNetworkd = lib.mkDefault true;
   networking.firewall.allowedTCPPorts = [22];
   networking.firewall.allowPing = true;
-
   nix.enable = false;
-
-  programs.command-not-found.enable = lib.mkDefault false;
-  programs.less.lessopen = lib.mkDefault null;
-
+  security.pam.services.su.forwardXAuth = lib.mkForce false;
   services.sshd.enable = true;
   services.openssh.settings.PermitRootLogin = lib.mkOverride 999 "yes";
 
   services.udisks2.enable = false; # udisks has become too bloated to have in a headless system
 
-  system.disableInstallerTools = lib.mkForce true;
   system.stateVersion = lib.version;
   system.switch.enable = lib.mkForce false;
+
+  # Remove perl from activation
+  system.etc.overlay.enable = lib.mkDefault true;
+  services.userborn.enable = lib.mkDefault true;
+
+  # Random perl remnants
+  system.disableInstallerTools = lib.mkForce true;
+  programs.less.lessopen = lib.mkDefault null;
+  programs.command-not-found.enable = lib.mkDefault false;
+  boot.enableContainers = lib.mkForce false;
+  boot.loader.grub.enable = lib.mkDefault false;
+  environment.defaultPackages = lib.mkDefault [];
+
+  # Check that the system does not contain a Nix store path that contains the
+  # string "perl".
+  system.forbiddenDependenciesRegexes = ["perl"];
 
   users.mutableUsers = false;
   users.users.root.openssh.authorizedKeys.keys = [
