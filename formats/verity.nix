@@ -103,7 +103,9 @@ in {
           qemu-img convert -f raw -O vmdk \
             $out/${config.image.repart.imageFileBasename}.raw \
             $out/${config.image.repart.imageFileBasename}.vmdk
-          rm -f $out/${config.image.repart.imageFileBasename}.raw
+          qemu-img info \
+            $out/${config.image.repart.imageFileBasename}.vmdk
+          rm -vf $out/${config.image.repart.imageFileBasename}.raw
         '';
       }
     );

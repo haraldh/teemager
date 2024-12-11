@@ -6,16 +6,30 @@
 }: {
   imports = [
     "${toString modulesPath}/profiles/minimal.nix"
+    "${toString modulesPath}/profiles/headless.nix"
     "${toString modulesPath}/profiles/qemu-guest.nix"
     #./amazon.nix
+    ./google.nix
   ];
+
+  services.timesyncd.enable = false;
+  services.chrony = {
+    enable = true;
+    enableNTS = true;
+    servers = [
+      "time.cloudflare.com"
+      "ntppool1.time.nl"
+      "ntppool2.time.nl"
+    ];
+  };
+
+  systemd.services."chronyd".after = ["network-online.target"];
 
   # ec2.enabled = true;
 
   system.image.id = "test_tdx";
 
   environment.etc."issue.d/ip.issue".text = "\\4\n";
-  networking.dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
 
   boot.kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
   /*
@@ -35,10 +49,19 @@
   environment.systemPackages = with pkgs; [
     teepot.teepot
     openssl
-    curl
     strace
     nixsgx.sgx-dcap.quote_verify
     nixsgx.sgx-dcap.default_qpl
+    cryptsetup
+    google-guest-agent
+  ];
+
+  programs.nix-ld.enable = true;
+
+  # Sets up all the libraries to load
+  programs.nix-ld.libraries = with pkgs; [
+    nixsgx.sgx-dcap.quote_verify
+    curl
   ];
 
   environment.etc."sgx_default_qcnl.conf" = {
@@ -55,6 +78,7 @@
   boot.initrd.systemd.enable = lib.mkDefault true;
   boot.kernelParams = [
     "console=ttyS0,115200n8"
+    "systemd.verity_usr_options=panic-on-corruption"
   ];
 
   boot.initrd.availableKernelModules = [
@@ -66,7 +90,8 @@
     NAutoVTs=0
     ReserveVT=0
   '';
-  #  console.enable = false;
+
+  console.enable = false;
 
   services.dbus.implementation = "broker";
 

@@ -49,7 +49,7 @@ sudo qemu-system-x86_64-uefi \
 
 ```shell
 qemu-img convert -f raw -O vmdk  result/*.raw test_tdx.vmdk
-gsutil cp result/*.vmdk gs://tdx_vms
+gsutil cp result/*.vmdk gs://tdx_vms/test_tdx.vmdk
 gcloud migration vms image-imports create \
    --location=us-central1 \
    --target-project=tdx-pilot \
