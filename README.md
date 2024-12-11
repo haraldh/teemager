@@ -71,3 +71,25 @@ gcloud compute instances create tdx-pilot \
    --project tdx-pilot \
    --image tdx-img-final
 ```
+
+```shell
+gcloud compute instances add-metadata  --project=tdx-pilot  tdx-pilot --zone us-central1-c --metadata=foo=bat
+```
+
+```shell
+gcloud compute instances describe --project=tdx-pilot  tdx-pilot --flatten="metadata[]"
+No zone specified. Using zone [us-central1-c] for instance: [tdx-pilot].
+---
+fingerprint: XhhD1A22h88=
+items:
+- key: foo
+  value: bat
+kind: compute#metadata
+```
+
+```
+# curl "http://metadata.google.internal/computeMetadata/v1/instance/hostname" -H "Metadata-Flavor: Google"
+tdx-pilot.us-central1-c.c.tdx-pilot.internal
+# curl "http://metadata.google.internal/computeMetadata/v1/instance/attributes/foo" -H "Metadata-Flavor: Google"
+bat
+```

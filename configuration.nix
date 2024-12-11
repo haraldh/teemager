@@ -27,6 +27,7 @@
   # Sets up all the libraries to load
   programs.nix-ld.libraries = with pkgs; [
     nixsgx.sgx-dcap.quote_verify
+    nixsgx.sgx-dcap.default_qpl
     curl
   ];
 

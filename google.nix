@@ -7,7 +7,7 @@
   boot.kernelModules = ["virtio_pci" "virtio_net"];
 
   # Force getting the hostname from Google Compute.
-  networking.hostName = lib.mkDefault "";
+  networking.hostName = lib.mkForce "";
 
   # Configure default metadata hostnames
   networking.extraHosts = ''
