@@ -16,10 +16,6 @@
     teepot.teepot
     openssl
     strace
-    nixsgx.sgx-dcap.quote_verify
-    nixsgx.sgx-dcap.default_qpl
-    cryptsetup
-    google-guest-agent
   ];
 
   programs.nix-ld.enable = true;
@@ -50,25 +46,44 @@
 
   environment.etc."issue.d/ip.issue".text = "\\4\n";
 
-  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
+  #boot.kernelPackages = lib.mkForce pkgs.linuxPackages_6_12;
+
+  boot.kernelPackages = pkgs.linuxPackages_custom {
+    inherit (pkgs.linuxPackages_6_12.kernel) src;
+    version = "6.2.13-tdx";
+    modDirVersion = "6.2.13";
+    configfile = ./config-6.12.3-tdx;
+    } /*.override {
+    kernelPatches = [
+      {
+        name = "tdx-rtmr";
+        patch = pkgs.fetchurl {
+          url = "https://github.com/haraldh/linux/commit/6a4569352916d059c759e9387f0aea63714d68b6.patch";
+          hash = "sha256-j2+o7N0uVIof3AJJ6s6zeIzTQFDPre8pseMty5tZ1YU=";
+        };
+      }
+    ];
+  }*/;
+
   /*
-  boot.kernelPackages = pkgs.linuxPackagesFor (pkgs.linux_latest.override {
+  boot.kernelPackages = pkgs.linuxPackagesFor (pkgs.linuxPackages_6_12.kernel.override {
     structuredExtraConfig = with lib.kernel; {
-     VIDEO = no;
-     SOUND = no;
-     VIRT_DRIVERS = yes;
-     VIRTIO_MMIO_CMDLINE_DEVICES = yes;
+      VIDEO = no;
+      SOUND = no;
+      VIRT_DRIVERS = yes;
+      VIRTIO_MMIO_CMDLINE_DEVICES = yes;
+      NVME = yes;
+      SQUASHFS = yes;
+      DM_VERITY=yes;
     };
+    defconfig = ./config-6.12.3-tdx;
     ignoreConfigErrors = true;
-      autoModules = false;
-      preferBuiltin = false;
+    autoModules = false;
+    preferBuiltin = false;
   });
   */
 
   environment.etc."sgx_default_qcnl.conf" = {
-    user = "root";
-    group = "root";
-    mode = "0644";
     source = "${pkgs.nixsgx.sgx-dcap.default_qpl}/etc/sgx_default_qcnl.conf";
   };
 
