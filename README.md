@@ -38,11 +38,12 @@ Raw disk image with UKI kernel+initrd+cmdline in EFI with root on tmpfs and /usr
 
 ```shell
 nix build -L .#verity
-qemu-img create -f qcow2 -b result/*.raw -F raw img.qcow2
+qemu-img create -f qcow2 -b result/*.vmdk -F vmdk img.qcow2
 sudo qemu-system-x86_64-uefi \
   -accel kvm \
   -cpu host -smp 4 -m 8G \
   -drive file=img.qcow2 \
+  -nographic \
   -net nic,model=virtio,macaddr=52:54:00:00:00:01 -net bridge,br=virbr0
 ```
 

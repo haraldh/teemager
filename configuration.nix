@@ -18,15 +18,6 @@
     strace
   ];
 
-  programs.nix-ld.enable = true;
-
-  # Sets up all the libraries to load
-  programs.nix-ld.libraries = with pkgs; [
-    nixsgx.sgx-dcap.quote_verify
-    nixsgx.sgx-dcap.default_qpl
-    curl
-  ];
-
   services.timesyncd.enable = false;
   services.chrony = {
     enable = true;
@@ -45,48 +36,50 @@
   system.image.id = "test_tdx";
 
   environment.etc."issue.d/ip.issue".text = "\\4\n";
- boot.initrd.includeDefaultModules = false;
 
+  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_6_12;
+  /*
   boot.kernelPackages = pkgs.linuxPackages_custom {
     inherit (pkgs.linuxPackages_6_12.kernel) src;
     version = "6.12.3-tdx";
     configfile = ./config-6.12.3-tdx;
     };
-    boot.kernelPatches = [
-      {
-        name = "tdx-rtmr";
-        patch = pkgs.fetchurl {
-          url = "https://github.com/haraldh/linux/commit/12d08008a5c94175e7a7dfcee40dff33431d9033.patch";
-          hash = "sha256-sVDhvC3qnXpL5FRxWiQotH7Nl/oqRBQGjJGyhsKeBTA=";
-        };
-      }
-    ];
+  */
+  boot.initrd.includeDefaultModules = false;
 
-  environment.etc."sgx_default_qcnl.conf" = {
-    source = "${pkgs.nixsgx.sgx-dcap.default_qpl}/etc/sgx_default_qcnl.conf";
-  };
-
-  environment.variables = {
-    QCNL_CONF_PATH = "${pkgs.nixsgx.sgx-dcap.default_qpl}/etc/sgx_default_qcnl.conf";
-  };
-
-  boot.initrd.systemd.enable = lib.mkDefault true;
   boot.kernelParams = [
     "console=ttyS0,115200n8"
     "systemd.verity_usr_options=panic-on-corruption"
   ];
 
+  boot.consoleLogLevel = 7;
+
   boot.initrd.availableKernelModules = [
     "tdx_guest"
     "nvme"
+    "sd_mod"
+    "dm_mod"
+    "ata_piix"
   ];
+
+  boot.kernelPatches = [
+    {
+      name = "tdx-rtmr";
+      patch = pkgs.fetchurl {
+        url = "https://github.com/haraldh/linux/commit/12d08008a5c94175e7a7dfcee40dff33431d9033.patch";
+        hash = "sha256-sVDhvC3qnXpL5FRxWiQotH7Nl/oqRBQGjJGyhsKeBTA=";
+      };
+    }
+  ];
+
+  boot.initrd.systemd.enable = lib.mkDefault true;
 
   services.logind.extraConfig = ''
     NAutoVTs=0
     ReserveVT=0
   '';
 
-  console.enable = false;
+  #console.enable = false;
 
   services.dbus.implementation = "broker";
 
