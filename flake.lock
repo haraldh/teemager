@@ -356,16 +356,16 @@
         "vault-auth-tee-flake": "vault-auth-tee-flake"
       },
       "locked": {
-        "lastModified": 1734439398,
-        "narHash": "sha256-U90ZgUPlx/o58dGvSQ4xi59wsEEBkHWk7SJtuV8Yjos=",
+        "lastModified": 1734623722,
+        "narHash": "sha256-EZ36Lp4f2VDvARhWJb9Q1wT54WziKEdVnxnG8Cke/Bw=",
         "owner": "matter-labs",
         "repo": "teepot",
-        "rev": "d2e87deeabb595c9d2cf20ea1d70bfd80b1bc06b",
+        "rev": "d5e83471799ea62e10d86b644477f4a28d75ee74",
         "type": "github"
       },
       "original": {
         "owner": "matter-labs",
-        "ref": "d2e87deeabb595c9d2cf20ea1d70bfd80b1bc06b",
+        "ref": "d5e83471799ea62e10d86b644477f4a28d75ee74",
         "repo": "teepot",
         "type": "github"
       }

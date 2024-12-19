@@ -92,11 +92,17 @@ in {
   system.build.vmdk_verity =
     config.system.build.finalImage.overrideAttrs
     (
-      finalAttrs: previousAttrs: {
+      finalAttrs: previousAttrs:
+      let
+        kernel = config.boot.uki.settings.UKI.Linux;
+        ukifile = "${config.system.build.uki}/${config.system.boot.loader.ukiFile}";
+      in
+      {
         nativeBuildInputs =
           previousAttrs.nativeBuildInputs
           ++ [
             pkgs.qemu
+            pkgs.teepot.teepot.rtmr_calc
           ];
 
         postInstall = ''
@@ -105,6 +111,12 @@ in {
             $out/${config.image.repart.imageFileBasename}.vmdk
           qemu-img info \
             $out/${config.image.repart.imageFileBasename}.vmdk
+          echo "kernel: ${kernel}"
+          echo "uki: ${ukifile}"
+          rtmr-calc \
+           --image $out/${config.image.repart.imageFileBasename}.raw \
+           --bootefi "${ukifile}" \
+           --kernel "${kernel}" | tee $out/${config.image.repart.imageFileBasename}_rtmr.json
           rm -vf $out/${config.image.repart.imageFileBasename}.raw
         '';
       }
