@@ -3,7 +3,7 @@
     nixsgx-flake.url = "github:matter-labs/nixsgx";
     nixpkgs.follows = "nixsgx-flake/nixpkgs";
     teepot-flake = {
-      url = "github:matter-labs/teepot?ref=d5e83471799ea62e10d86b644477f4a28d75ee74";
+      url = "github:matter-labs/teepot?ref=84ac87827ace6b134345abbe7b4327416f2bcf52";
       inputs.nixsgx-flake.follows = "nixsgx-flake";
     };
   };
