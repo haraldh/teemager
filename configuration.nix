@@ -14,9 +14,6 @@
 
   environment.systemPackages = with pkgs; [
     teepot.teepot
-    openssl
-    strace
-    tpm2-tools
   ];
 
   services.timesyncd.enable = false;
