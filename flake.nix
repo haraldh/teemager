@@ -3,7 +3,7 @@
     nixsgx-flake.url = "github:matter-labs/nixsgx";
     nixpkgs.follows = "nixsgx-flake/nixpkgs";
     teepot-flake = {
-      url = "github:matter-labs/teepot?ref=84ac87827ace6b134345abbe7b4327416f2bcf52";
+      url = "github:matter-labs/teepot";
       inputs.nixsgx-flake.follows = "nixsgx-flake";
     };
   };
@@ -38,25 +38,21 @@
       pkgs,
     }: {
       verity = nixosGenerate {
-        inherit (nixpkgs) lib;
         inherit (nixpkgs.lib) nixosSystem;
         inherit system pkgs;
         modules = [
           ./configuration.nix
         ];
         formatModule = ./formats/verity.nix;
-        format = "verity";
       };
 
       uki = nixosGenerate {
-        inherit (nixpkgs) lib;
         inherit (nixpkgs.lib) nixosSystem;
         inherit system pkgs;
         modules = [
           ./configuration.nix
         ];
         formatModule = ./formats/uki.nix;
-        format = "uki";
       };
     });
 

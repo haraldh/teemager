@@ -92,12 +92,10 @@ in {
   system.build.vmdk_verity =
     config.system.build.finalImage.overrideAttrs
     (
-      finalAttrs: previousAttrs:
-      let
+      finalAttrs: previousAttrs: let
         kernel = config.boot.uki.settings.UKI.Linux;
         ukifile = "${config.system.build.uki}/${config.system.boot.loader.ukiFile}";
-      in
-      {
+      in {
         nativeBuildInputs =
           previousAttrs.nativeBuildInputs
           ++ [
