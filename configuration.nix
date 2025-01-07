@@ -16,6 +16,7 @@
     teepot.teepot
   ];
 
+  networking.firewall.logRefusedConnections = false;
   services.journald.storage = "volatile";
 
   services.timesyncd.enable = false;
@@ -45,6 +46,16 @@
     configfile = ./config-6.12.3-tdx;
     };
   */
+  boot.kernelPatches = [
+    {
+      name = "tdx-rtmr";
+      patch = pkgs.fetchurl {
+        url = "https://github.com/haraldh/linux/commit/12d08008a5c94175e7a7dfcee40dff33431d9033.patch";
+        hash = "sha256-sVDhvC3qnXpL5FRxWiQotH7Nl/oqRBQGjJGyhsKeBTA=";
+      };
+    }
+  ];
+
   boot.initrd.includeDefaultModules = false;
 
   boot.kernelParams = [
@@ -60,16 +71,6 @@
     "sd_mod"
     "dm_mod"
     "ata_piix"
-  ];
-
-  boot.kernelPatches = [
-    {
-      name = "tdx-rtmr";
-      patch = pkgs.fetchurl {
-        url = "https://github.com/haraldh/linux/commit/12d08008a5c94175e7a7dfcee40dff33431d9033.patch";
-        hash = "sha256-sVDhvC3qnXpL5FRxWiQotH7Nl/oqRBQGjJGyhsKeBTA=";
-      };
-    }
   ];
 
   boot.initrd.systemd.enable = lib.mkDefault true;
