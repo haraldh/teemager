@@ -16,6 +16,8 @@
     teepot.teepot
   ];
 
+  services.journald.storage = "volatile";
+
   services.timesyncd.enable = false;
   services.chrony = {
     enable = true;
