@@ -12,11 +12,33 @@
     ./google.nix
   ];
 
+  virtualisation.docker.enable = true;
+
+  systemd.services.docker_start_container = {
+    description = "Start Docker the measured container after network online";
+    wantedBy = ["multi-user.target"];
+    after = ["network-online.target" "docker.service"];
+    requires = ["network-online.target" "docker.service"];
+    serviceConfig = {
+      Type = "oneshot";
+      User = "root";
+    };
+    path = [pkgs.curl pkgs.docker pkgs.teepot.teepot.tdx_extend];
+    script = ''
+      set -eu
+      CONTAINER_URL=$(curl "http://metadata.google.internal/computeMetadata/v1/instance/attributes/container_url" -H "Metadata-Flavor: Google")
+      DIGEST=$(echo -n -- "$CONTAINER_URL" | sha384sum | { read a _; echo "$a"; })
+      tdx-extend --digest "$DIGEST" --rtmr 3
+      docker run -d --init --privileged --rm "$CONTAINER_URL"
+    '';
+  };
+
   environment.systemPackages = with pkgs; [
     teepot.teepot
   ];
 
   networking.firewall.logRefusedConnections = false;
+
   services.journald.storage = "volatile";
 
   services.timesyncd.enable = false;
