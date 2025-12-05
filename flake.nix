@@ -8,6 +8,7 @@
     calc-tee-pcrs-rtmr-flake = {
       url = "github:haraldh/calc-tee-pcrs-rtmr";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
     };
   };
 
