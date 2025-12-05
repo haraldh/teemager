@@ -59,6 +59,8 @@ For building custom TEE images in your own flake:
 | Export | Description |
 |--------|-------------|
 | `lib.mkTeeImage` | Function to create TEE images |
+| `lib.teeConfigs.sev-snp` | AMD SEV-SNP kernel configuration |
+| `lib.teeConfigs.tdx` | Intel TDX kernel configuration |
 | `lib.cloudConfigs.aws` | AWS cloud configuration module |
 | `lib.cloudConfigs.gcp` | GCP cloud configuration module |
 
@@ -181,8 +183,9 @@ Use `lib.mkTeeImage` to build custom TEE images in your own flake:
       };
     in {
       packages.${system} = {
-        # Custom AWS image with your configuration
+        # Custom AWS SEV-SNP image
         my-aws-image = mkTeeImage {
+          teeConfig = teemager.lib.teeConfigs.sev-snp;
           cloudConfig = teemager.lib.cloudConfigs.aws;
           userConfig = {
             # Your NixOS configuration
@@ -190,11 +193,11 @@ Use `lib.mkTeeImage` to build custom TEE images in your own flake:
           };
         };
 
-        # Custom GCP image
+        # Custom GCP TDX image
         my-gcp-image = mkTeeImage {
+          teeConfig = teemager.lib.teeConfigs.tdx;
           cloudConfig = teemager.lib.cloudConfigs.gcp;
           userConfig = import ./my-config.nix;
-          isDebug = false;
         };
       };
     };
@@ -218,6 +221,7 @@ Use `lib.mkTeeImage` to build custom TEE images in your own flake:
       };
     in {
       packages.x86_64-linux.my-image = pkgs.mkTeeImage {
+        teeConfig = teemager.lib.teeConfigs.sev-snp;
         cloudConfig = teemager.lib.cloudConfigs.aws;
         userConfig = ./my-config.nix;
       };
@@ -229,6 +233,7 @@ Use `lib.mkTeeImage` to build custom TEE images in your own flake:
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
+| `teeConfig` | module | (required) | TEE platform config (use `lib.teeConfigs.sev-snp` or `lib.teeConfigs.tdx`) |
 | `cloudConfig` | module | `{}` | Cloud-specific NixOS module (use `lib.cloudConfigs.*`) |
 | `userConfig` | module | `{}` | Your custom NixOS configuration |
 | `isDebug` | bool | `false` | Enable debug mode (root console access) |

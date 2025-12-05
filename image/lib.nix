@@ -3,8 +3,9 @@
   lib,
   system,
   stdenv,
-  userConfig ? { },
+  teeConfig,
   cloudConfig ? { },
+  userConfig ? { },
   isDebug ? false,
   nixosSystem,
   ...
@@ -12,14 +13,11 @@
 let
   nixos-generate = import ./nixos-generate.nix;
 
-  tee-config = {
-    environment = {
-      systemPackages = [
-        # debugging tools
-        pkgs.openssl
-        pkgs.tpm2-tools
-      ];
-    };
+  tee-packages = {
+    environment.systemPackages = [
+      pkgs.openssl
+      pkgs.tpm2-tools
+    ];
   };
 
   # Determine the correct EFI file name based on architecture
@@ -32,8 +30,10 @@ pkgs.callPackage nixos-generate {
   modules = [
     # generic nixos configuration
     ./configuration.nix
-    # tee nixos packages and environment
-    tee-config
+    # TEE platform config (kernel)
+    teeConfig
+    # TEE packages
+    tee-packages
     # cloud config
     cloudConfig
     # user specific nixos config

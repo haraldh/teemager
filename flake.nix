@@ -21,22 +21,30 @@
     {
       # System-independent lib functions for consumers
       lib = {
-        # mkTeeImage: { pkgs, nixosSystem } -> { userConfig?, cloudConfig?, isDebug? } -> derivation
+        # mkTeeImage: { pkgs, nixosSystem } -> { teeConfig, cloudConfig?, userConfig?, isDebug? } -> derivation
         mkTeeImage =
           { pkgs, nixosSystem }:
           {
-            userConfig ? { },
+            teeConfig,
             cloudConfig ? { },
+            userConfig ? { },
             isDebug ? false,
           }:
           pkgs.callPackage ./image/lib.nix {
             inherit
-              userConfig
+              teeConfig
               cloudConfig
+              userConfig
               isDebug
               nixosSystem
               ;
           };
+
+        # TEE platform configurations (kernel)
+        teeConfigs = {
+          sev-snp = import ./image/tee-sev-snp.nix; # AMD SEV-SNP
+          tdx = import ./image/tee-tdx.nix; # Intel TDX
+        };
 
         # Cloud configurations for reuse
         cloudConfigs = {
@@ -126,24 +134,28 @@
           default = aws-raw-image;
 
           aws-raw-image = tee-image {
+            teeConfig = import ./image/tee-sev-snp.nix;
             cloudConfig = import ./cloud/aws.nix;
             userConfig = import ./configuration.nix;
             isDebug = false;
           };
 
           aws-raw-image-debug = tee-image {
+            teeConfig = import ./image/tee-sev-snp.nix;
             cloudConfig = import ./cloud/aws.nix;
             userConfig = import ./configuration.nix;
             isDebug = true;
           };
 
           gcp-tdx-image = tee-image {
+            teeConfig = import ./image/tee-tdx.nix;
             cloudConfig = import ./cloud/gcp.nix;
             userConfig = import ./configuration.nix;
             isDebug = false;
           };
 
           gcp-tdx-image-debug = tee-image {
+            teeConfig = import ./image/tee-tdx.nix;
             cloudConfig = import ./cloud/gcp.nix;
             userConfig = import ./configuration.nix;
             isDebug = true;
