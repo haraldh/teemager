@@ -84,12 +84,12 @@
           default = aws-raw-image;
 
           aws-raw-image = tee-image {
-            userConfig = import ./aws-config.nix;
+            userConfig = import ./sev-snp-aws-config.nix;
             isDebug = false;
           };
 
           aws-raw-image-debug = tee-image {
-            userConfig = import ./aws-config.nix;
+            userConfig = import ./sev-snp-aws-config.nix;
             isDebug = true;
           };
 
