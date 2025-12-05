@@ -18,7 +18,42 @@
       flake-utils,
       calc-tee-pcrs-rtmr-flake,
     }:
-    flake-utils.lib.eachSystem [ "x86_64-linux" ] (
+    {
+      # System-independent lib functions for consumers
+      lib = {
+        # mkTeeImage: { pkgs, nixosSystem } -> { userConfig?, cloudConfig?, isDebug? } -> derivation
+        mkTeeImage =
+          { pkgs, nixosSystem }:
+          {
+            userConfig ? { },
+            cloudConfig ? { },
+            isDebug ? false,
+          }:
+          pkgs.callPackage ./image/lib.nix {
+            inherit
+              userConfig
+              cloudConfig
+              isDebug
+              nixosSystem
+              ;
+          };
+
+        # Cloud configurations for reuse
+        cloudConfigs = {
+          aws = import ./cloud/aws.nix;
+          gcp = import ./cloud/gcp.nix;
+        };
+      };
+
+      # Overlay that adds mkTeeImage to pkgs
+      overlays.default = final: prev: {
+        mkTeeImage = self.lib.mkTeeImage {
+          pkgs = final;
+          inherit (nixpkgs.lib) nixosSystem;
+        };
+      };
+    }
+    // flake-utils.lib.eachSystem [ "x86_64-linux" ] (
       system:
       let
         # Detect ccache availability via environment variable (requires --impure)
@@ -68,22 +103,11 @@
           inherit system overlays;
         };
 
-        tee-image =
-          {
-            userConfig ? { },
-            cloudConfig ? { },
-            isDebug ? false,
-            secureBootData ? null,
-          }:
-          pkgs.callPackage ./image/lib.nix {
-            inherit
-              userConfig
-              cloudConfig
-              isDebug
-              secureBootData
-              ;
-            inherit (nixpkgs.lib) nixosSystem;
-          };
+        # Use the exported lib function internally
+        tee-image = self.lib.mkTeeImage {
+          inherit pkgs;
+          inherit (nixpkgs.lib) nixosSystem;
+        };
       in
       {
         packages = rec {
