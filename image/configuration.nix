@@ -1,8 +1,21 @@
 {
+  pkgs,
   lib,
   modulesPath,
   ...
-}: {
+}:
+ let
+   # Minimal TEE kernel built from custom config for AMD SEV-SNP
+   # Use ccacheStdenv only when flake's ccache overlay is active (teemagerCcacheEnabled marker)
+   # This avoids conflicts with global NixOS programs.ccache.enable
+   minimalTeeKernel = import ./minimal-tee-kernel.nix ({
+     inherit pkgs lib;
+     platform = "amd";
+   } // lib.optionalAttrs (pkgs ? teemagerCcacheEnabled) {
+     stdenv = pkgs.ccacheStdenv;
+   });
+ in
+ {
   imports = [
     "${toString modulesPath}/profiles/minimal.nix"
     "${toString modulesPath}/profiles/qemu-guest.nix"
@@ -21,6 +34,9 @@
   boot.enableContainers = lib.mkDefault false;
   boot.initrd.systemd.enable = lib.mkDefault true;
 
+  # Use minimal TEE kernel
+  boot.kernelPackages = pkgs.linuxPackagesFor minimalTeeKernel;
+
   boot.kernelParams = [
     "panic=30"
     "boot.panic_on_fail" # reboot the machine upon fatal boot issues
@@ -33,7 +49,9 @@
     "tpm_crb.force=1"
     "systemd.gpt_auto=0" # Disable systemd-gpt-auto-generator to prevent e.g. ESP mounting
   ];
-  #networking.hostName = lib.mkDefault "nixos";
+
+  # Force getting the hostname
+  networking.hostName = lib.mkForce "";
 
   documentation.info.enable = lib.mkDefault false;
 

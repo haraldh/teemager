@@ -3,6 +3,7 @@
 , system
 , stdenv
 , userConfig ? { }
+, cloudConfig ? { }
 , isDebug ? false
 , nixosSystem
 , ...
@@ -32,6 +33,8 @@ pkgs.callPackage nixos-generate {
     ./configuration.nix
     # tee nixos packages and environment
     tee-config
+    # cloud config
+    cloudConfig
     # user specific nixos config
     userConfig
     {

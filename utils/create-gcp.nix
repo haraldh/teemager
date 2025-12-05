@@ -2,7 +2,7 @@
 
 let
   script = pkgs.writeShellApplication {
-    name = "create-google-image";
+    name = "create-gcp";
 
     runtimeInputs = with pkgs; [
       qemu
@@ -19,7 +19,7 @@ let
       # Check if raw image file is provided
       if [ -z "''${1:-}" ]; then
         echo "Error: Raw image file not provided"
-        echo "Usage: create-google-image <raw-image-file>"
+        echo "Usage: create-gcp <raw-image-file>"
         echo ""
         echo "Environment variables (required):"
         echo "  GCP_PROJECT  - Google Cloud project"
@@ -106,5 +106,5 @@ let
 in
 {
   type = "app";
-  program = "${script}/bin/create-google-image";
+  program = "${script}/bin/create-gcp";
 }

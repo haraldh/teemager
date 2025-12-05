@@ -1,5 +1,5 @@
 {
-  description = "AWS SEV-SNP and Google TDX";
+  description = "AWS SEV-SNP and gcp TDX";
 
   inputs = {
     nixpkgs.url = "nixpkgs/nixos-25.11";
@@ -71,11 +71,12 @@
         tee-image =
           {
             userConfig ? { },
+            cloudConfig ? { },
             isDebug ? false,
             secureBootData ? null,
           }:
           pkgs.callPackage ./image/lib.nix {
-            inherit userConfig isDebug secureBootData;
+            inherit userConfig cloudConfig isDebug secureBootData;
             inherit (nixpkgs.lib) nixosSystem;
           };
       in
@@ -84,22 +85,26 @@
           default = aws-raw-image;
 
           aws-raw-image = tee-image {
-            userConfig = import ./sev-snp-aws-config.nix;
+            cloudConfig = import ./image/aws.nix;
+            userConfig = import ./configuration.nix;
             isDebug = false;
           };
 
           aws-raw-image-debug = tee-image {
-            userConfig = import ./sev-snp-aws-config.nix;
+            cloudConfig = import ./image/aws.nix;
+            userConfig = import ./configuration.nix;
             isDebug = true;
           };
 
-          google-tdx-image = tee-image {
-            userConfig = import ./tdx-google-config.nix;
+          gcp-tdx-image = tee-image {
+            cloudConfig = import ./image/gcp.nix;
+            userConfig = import ./configuration.nix;
             isDebug = false;
           };
 
-          google-tdx-image-debug = tee-image {
-            userConfig = import ./tdx-google-config.nix;
+          gcp-tdx-image-debug = tee-image {
+            cloudConfig = import ./image/gcp.nix;
+            userConfig = import ./configuration.nix;
             isDebug = true;
           };
         };
@@ -109,7 +114,7 @@
           let
             boot-uefi-qemu-app = pkgs.callPackage ./utils/boot-uefi-qemu.nix { };
             create-ami-app = pkgs.callPackage ./utils/create-ami.nix { };
-            create-google-image-app = pkgs.callPackage ./utils/create-google-image.nix { };
+            create-gcp-app = pkgs.callPackage ./utils/create-gcp.nix { };
           in
           rec {
             default = boot-uefi-qemu;
@@ -121,9 +126,9 @@
               type = create-ami-app.type;
               program = create-ami-app.program;
             };
-            create-google-image = {
-              type = create-google-image-app.type;
-              program = create-google-image-app.program;
+            create-gcp = {
+              type = create-gcp-app.type;
+              program = create-gcp-app.program;
             };
           };
 
