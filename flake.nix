@@ -109,6 +109,7 @@
           let
             boot-uefi-qemu-app = pkgs.callPackage ./utils/boot-uefi-qemu.nix { };
             create-ami-app = pkgs.callPackage ./utils/create-ami.nix { };
+            create-google-image-app = pkgs.callPackage ./utils/create-google-image.nix { };
           in
           rec {
             default = boot-uefi-qemu;
@@ -119,6 +120,10 @@
             create-ami = {
               type = create-ami-app.type;
               program = create-ami-app.program;
+            };
+            create-google-image = {
+              type = create-google-image-app.type;
+              program = create-google-image-app.program;
             };
           };
 
