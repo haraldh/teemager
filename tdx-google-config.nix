@@ -2,7 +2,22 @@
   lib,
   pkgs,
   ...
-}: {
+}:
+let
+  # Minimal TEE kernel built from custom config for AMD SEV-SNP
+  # Use ccacheStdenv only when flake's ccache overlay is active (teemagerCcacheEnabled marker)
+  # This avoids conflicts with global NixOS programs.ccache.enable
+  minimalTeeKernel = import ./minimal-tee-kernel.nix ({
+    inherit pkgs lib;
+    platform = "amd";
+  } // lib.optionalAttrs (pkgs ? teemagerCcacheEnabled) {
+    stdenv = pkgs.ccacheStdenv;
+  });
+in
+{
+  # Use minimal TEE kernel
+  boot.kernelPackages = pkgs.linuxPackagesFor minimalTeeKernel;
+
   boot.initrd.kernelModules = ["virtio_scsi"];
   boot.kernelModules = ["virtio_pci" "virtio_net"];
 

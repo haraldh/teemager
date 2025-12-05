@@ -1,18 +1,18 @@
-{
-  pkgs,
-  nixosSystem,
-  formatModule,
-  system,
-  specialArgs ? {},
-  modules ? [],
-}: let
+{ pkgs
+, nixosSystem
+, formatModule
+, system
+, specialArgs ? { }
+, modules ? [ ]
+}:
+let
   image = nixosSystem {
     inherit pkgs specialArgs;
     modules =
       [
         formatModule
         (
-          {lib, ...}: {
+          { lib, ... }: {
             options = {
               fileExtension = lib.mkOption {
                 type = lib.types.str;
@@ -30,4 +30,4 @@
       ++ modules;
   };
 in
-  image.config.system.build.${image.config.formatAttr}
+image.config.system.build.${image.config.formatAttr}

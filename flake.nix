@@ -1,78 +1,138 @@
 {
+  description = "AWS SEV-SNP and Google TDX";
+
   inputs = {
-    nixsgx-flake.url = "github:matter-labs/nixsgx";
-    nixpkgs.follows = "nixsgx-flake/nixpkgs";
-    teepot-flake = {
-      url = "github:matter-labs/teepot";
-      inputs.nixsgx-flake.follows = "nixsgx-flake";
+    nixpkgs.url = "nixpkgs/nixos-25.11";
+    flake-utils.url = "github:numtide/flake-utils";
+
+    calc-tee-pcrs-rtmr-flake = {
+      url = "github:haraldh/calc-tee-pcrs-rtmr";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
-  outputs = {
-    self,
-    nixpkgs,
-    ...
-  } @ inputs: let
-    nixosGenerate = import ./nixos-generate.nix;
 
-    overlays = with inputs; [
-      teepot-flake.overlays.default
-      nixsgx-flake.overlays.default
-    ];
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      calc-tee-pcrs-rtmr-flake,
+    }:
+    flake-utils.lib.eachSystem [ "x86_64-linux" ] (
+      system:
+      let
+        # Detect ccache availability via environment variable (requires --impure)
+        # Usage: NIX_CCACHE_DIR=/var/cache/ccache nix build --impure .#aws-raw-image
+        ccacheDir = builtins.getEnv "NIX_CCACHE_DIR";
+        useCcache = ccacheDir != "";
 
-    pkgsForSystem = system:
-      import nixpkgs {
-        inherit system;
-        inherit overlays;
-      };
-    allVMs = ["x86_64-linux"];
-    forAllVMs = f:
-      nixpkgs.lib.genAttrs allVMs (system:
-        f {
-          inherit system;
-          pkgs = pkgsForSystem system;
-        });
-    forAllSystems = nixpkgs.lib.genAttrs ["x86_64-linux" "x86_64-darwin" "i686-linux" "aarch64-linux" "aarch64-darwin"];
-  in {
-    packages = forAllVMs ({
-      system,
-      pkgs,
-    }: {
-      verity = nixosGenerate {
-        inherit (nixpkgs.lib) nixosSystem;
-        inherit system pkgs;
-        modules = [
-          ./configuration.nix
+        # Ccache overlay for kernel builds
+        ccacheOverlay =
+          final: prev:
+          if useCcache then
+            let
+              ccacheStdenv' = builtins.trace "Building kernel with ccache (${ccacheDir})" prev.ccacheStdenv;
+            in
+            {
+              ccacheWrapper = prev.ccacheWrapper.override {
+                extraConfig = ''
+                  export CCACHE_COMPRESS=1
+                  export CCACHE_DIR="${ccacheDir}"
+                  export CCACHE_UMASK=007
+                '';
+              };
+
+              # Marker to distinguish flake's ccache from global NixOS ccache
+              teemagerCcacheEnabled = true;
+
+              # Expose ccacheStdenv for use by minimal-tee-kernel.nix
+              ccacheStdenv = ccacheStdenv';
+
+              linuxPackages_6_12 = prev.linuxPackages_6_12.extend (
+                lpFinal: lpPrev: {
+                  kernel = lpPrev.kernel.override {
+                    stdenv = ccacheStdenv';
+                  };
+                }
+              );
+            }
+          else
+            { };
+
+        overlays = [
+          calc-tee-pcrs-rtmr-flake.overlays.default
+          ccacheOverlay
         ];
-        formatModule = ./formats/verity.nix;
-      };
 
-      uki = nixosGenerate {
-        inherit (nixpkgs.lib) nixosSystem;
-        inherit system pkgs;
-        modules = [
-          ./configuration.nix
-        ];
-        formatModule = ./formats/uki.nix;
-      };
-    });
+        pkgs = import nixpkgs {
+          inherit system overlays;
+        };
 
-    formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
+        tee-image =
+          {
+            userConfig ? { },
+            isDebug ? false,
+            secureBootData ? null,
+          }:
+          pkgs.callPackage ./image/lib.nix {
+            inherit userConfig isDebug secureBootData;
+            inherit (nixpkgs.lib) nixosSystem;
+          };
+      in
+      {
+        packages = rec {
+          default = aws-raw-image;
 
-    devShells = forAllSystems (
-      system: let
-        pkgs = pkgsForSystem system;
-      in {
-        default = pkgs.callPackage ./devShell.nix {};
+          aws-raw-image = tee-image {
+            userConfig = import ./aws-config.nix;
+            isDebug = false;
+          };
+
+          aws-raw-image-debug = tee-image {
+            userConfig = import ./aws-config.nix;
+            isDebug = true;
+          };
+
+          google-tdx-image = tee-image {
+            userConfig = import ./tdx-google-config.nix;
+            isDebug = false;
+          };
+
+          google-tdx-image-debug = tee-image {
+            userConfig = import ./tdx-google-config.nix;
+            isDebug = true;
+          };
+        };
+
+        # For `nix run`
+        apps =
+          let
+            boot-uefi-qemu-app = pkgs.callPackage ./utils/boot-uefi-qemu.nix { };
+            create-ami-app = pkgs.callPackage ./utils/create-ami.nix { };
+          in
+          rec {
+            default = boot-uefi-qemu;
+            boot-uefi-qemu = {
+              type = boot-uefi-qemu-app.type;
+              program = boot-uefi-qemu-app.program;
+            };
+            create-ami = {
+              type = create-ami-app.type;
+              program = create-ami-app.program;
+            };
+          };
+
+        # For `nix develop`
+        devShells.default = pkgs.mkShell {
+          packages = with pkgs; [
+            awscli2
+            calc-tee-pcrs-rtmr
+            openssl
+            pkg-config
+            swtpm
+            google-cloud-sdk-gce
+          ];
+        };
       }
     );
-
-    nixosConfigurations.test = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-      modules = [
-        {nixpkgs.overlays = overlays;}
-        ./formats/test.nix
-        ./configuration.nix
-      ];
-    };
-  };
 }
