@@ -90,25 +90,25 @@
           default = aws-raw-image;
 
           aws-raw-image = tee-image {
-            cloudConfig = import ./image/aws.nix;
+            cloudConfig = import ./cloud/aws.nix;
             userConfig = import ./configuration.nix;
             isDebug = false;
           };
 
           aws-raw-image-debug = tee-image {
-            cloudConfig = import ./image/aws.nix;
+            cloudConfig = import ./cloud/aws.nix;
             userConfig = import ./configuration.nix;
             isDebug = true;
           };
 
           gcp-tdx-image = tee-image {
-            cloudConfig = import ./image/gcp.nix;
+            cloudConfig = import ./cloud/gcp.nix;
             userConfig = import ./configuration.nix;
             isDebug = false;
           };
 
           gcp-tdx-image-debug = tee-image {
-            cloudConfig = import ./image/gcp.nix;
+            cloudConfig = import ./cloud/gcp.nix;
             userConfig = import ./configuration.nix;
             isDebug = true;
           };
