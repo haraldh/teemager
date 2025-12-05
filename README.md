@@ -62,9 +62,13 @@ For building custom TEE images in your own flake:
 | `lib.cloudConfigs.aws` | AWS cloud configuration module |
 | `lib.cloudConfigs.gcp` | GCP cloud configuration module |
 
-### Overlay (`overlays.default`)
+### Overlays
 
-Adds `pkgs.mkTeeImage` when applied to nixpkgs.
+| Overlay | Description |
+|---------|-------------|
+| `overlays.default` | Full overlay: includes all dependencies + `mkTeeImage` |
+| `overlays.mkTeeImage` | Just `mkTeeImage` (if you already have dependencies) |
+| `overlays.calc-tee-pcrs-rtmr` | Re-exported PCR/RTMR calculation tool |
 
 ## Building
 

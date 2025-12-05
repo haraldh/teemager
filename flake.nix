@@ -45,12 +45,24 @@
         };
       };
 
-      # Overlay that adds mkTeeImage to pkgs
-      overlays.default = final: prev: {
-        mkTeeImage = self.lib.mkTeeImage {
-          pkgs = final;
-          inherit (nixpkgs.lib) nixosSystem;
+      # Overlays for external flakes
+      overlays = {
+        # Full overlay: includes dependencies + mkTeeImage
+        default = nixpkgs.lib.composeManyExtensions [
+          calc-tee-pcrs-rtmr-flake.overlays.default
+          self.overlays.mkTeeImage
+        ];
+
+        # Just mkTeeImage (if consumer already has calc-tee-pcrs-rtmr)
+        mkTeeImage = final: prev: {
+          mkTeeImage = self.lib.mkTeeImage {
+            pkgs = final;
+            inherit (nixpkgs.lib) nixosSystem;
+          };
         };
+
+        # Re-export calc-tee-pcrs-rtmr overlay
+        calc-tee-pcrs-rtmr = calc-tee-pcrs-rtmr-flake.overlays.default;
       };
     }
     // flake-utils.lib.eachSystem [ "x86_64-linux" ] (
