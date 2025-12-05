@@ -76,7 +76,12 @@
             secureBootData ? null,
           }:
           pkgs.callPackage ./image/lib.nix {
-            inherit userConfig cloudConfig isDebug secureBootData;
+            inherit
+              userConfig
+              cloudConfig
+              isDebug
+              secureBootData
+              ;
             inherit (nixpkgs.lib) nixosSystem;
           };
       in

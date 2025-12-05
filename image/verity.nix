@@ -1,10 +1,11 @@
-{ config
-, pkgs
-, lib
-, modulesPath
-, ukiPath
-, espSize
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  modulesPath,
+  ukiPath,
+  espSize,
+  ...
 }:
 let
   inherit (config.image.repart.verityStore) partitionIds;
@@ -82,30 +83,28 @@ in
     };
   };
 
-  system.build.vmdk_verity =
-    config.system.build.finalImage.overrideAttrs
-      (
-        finalAttrs: previousAttrs:
-          let
-            kernel = ukicfg.settings.UKI.Linux;
-            ukifile = "${config.system.build.uki}/${config.system.boot.loader.ukiFile}";
-          in
-          {
-            postInstall = ''
-              echo "kernel: ${kernel}"
-              echo "uki: ${ukifile}"
+  system.build.vmdk_verity = config.system.build.finalImage.overrideAttrs (
+    finalAttrs: previousAttrs:
+    let
+      kernel = ukicfg.settings.UKI.Linux;
+      ukifile = "${config.system.build.uki}/${config.system.boot.loader.ukiFile}";
+    in
+    {
+      postInstall = ''
+        echo "kernel: ${kernel}"
+        echo "uki: ${ukifile}"
 
-              cp ${config.boot.uki.settings.UKI.Linux} $out/linux-kernel
-              cp ${config.boot.uki.settings.UKI.Initrd} $out/linux-initramfs
-              echo ${config.boot.uki.settings.UKI.Cmdline} > $out/linux-cmdline
-              cp ${ukifile} $out/linux-uki
+        cp ${config.boot.uki.settings.UKI.Linux} $out/linux-kernel
+        cp ${config.boot.uki.settings.UKI.Initrd} $out/linux-initramfs
+        echo ${config.boot.uki.settings.UKI.Cmdline} > $out/linux-cmdline
+        cp ${ukifile} $out/linux-uki
 
-              ${lib.getExe pkgs.calc-tee-pcrs-rtmr} \
-               --disk-image $out/${config.image.baseName}.raw \
-               --uki "${ukifile}" | tee $out/pcr_rtmr.json
-            '';
-          }
-      );
+        ${lib.getExe pkgs.calc-tee-pcrs-rtmr} \
+         --disk-image $out/${config.image.baseName}.raw \
+         --uki "${ukifile}" | tee $out/pcr_rtmr.json
+      '';
+    }
+  );
 
   formatAttr = lib.mkForce "vmdk_verity";
   fileExtension = lib.mkForce ".raw";

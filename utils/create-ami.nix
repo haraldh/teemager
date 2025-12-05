@@ -1,4 +1,9 @@
-{ pkgs, lib, stdenv, system }:
+{
+  pkgs,
+  lib,
+  stdenv,
+  system,
+}:
 
 let
   nixArch = builtins.head (builtins.split "-" system);

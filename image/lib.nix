@@ -1,12 +1,13 @@
-{ pkgs
-, lib
-, system
-, stdenv
-, userConfig ? { }
-, cloudConfig ? { }
-, isDebug ? false
-, nixosSystem
-, ...
+{
+  pkgs,
+  lib,
+  system,
+  stdenv,
+  userConfig ? { },
+  cloudConfig ? { },
+  isDebug ? false,
+  nixosSystem,
+  ...
 }:
 let
   nixos-generate = import ./nixos-generate.nix;
@@ -41,7 +42,8 @@ pkgs.callPackage nixos-generate {
       _module.args.ukiPath = ukiPath;
       _module.args.espSize = "${if arch == "aarch64" then "128" else "64"}M";
     }
-  ] ++ lib.optionals (!isDebug) [ ./asserts.nix ]
+  ]
+  ++ lib.optionals (!isDebug) [ ./asserts.nix ]
   ++ lib.optionals isDebug [ ./debug.nix ];
   formatModule = ./verity.nix;
 }

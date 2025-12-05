@@ -4,18 +4,21 @@
   modulesPath,
   ...
 }:
- let
-   # Minimal TEE kernel built from custom config for AMD SEV-SNP
-   # Use ccacheStdenv only when flake's ccache overlay is active (teemagerCcacheEnabled marker)
-   # This avoids conflicts with global NixOS programs.ccache.enable
-   minimalTeeKernel = import ./minimal-tee-kernel.nix ({
-     inherit pkgs lib;
-     platform = "amd";
-   } // lib.optionalAttrs (pkgs ? teemagerCcacheEnabled) {
-     stdenv = pkgs.ccacheStdenv;
-   });
- in
- {
+let
+  # Minimal TEE kernel built from custom config for AMD SEV-SNP
+  # Use ccacheStdenv only when flake's ccache overlay is active (teemagerCcacheEnabled marker)
+  # This avoids conflicts with global NixOS programs.ccache.enable
+  minimalTeeKernel = import ./minimal-tee-kernel.nix (
+    {
+      inherit pkgs lib;
+      platform = "amd";
+    }
+    // lib.optionalAttrs (pkgs ? teemagerCcacheEnabled) {
+      stdenv = pkgs.ccacheStdenv;
+    }
+  );
+in
+{
   imports = [
     "${toString modulesPath}/profiles/minimal.nix"
     "${toString modulesPath}/profiles/qemu-guest.nix"
@@ -63,7 +66,7 @@
   programs.command-not-found.enable = lib.mkDefault false;
   programs.less.lessopen = lib.mkDefault null;
 
-    # Secure network defaults
+  # Secure network defaults
   systemd.network = {
     enable = lib.mkDefault true;
     networks."10-secure" = {

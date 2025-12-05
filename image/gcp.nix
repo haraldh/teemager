@@ -9,9 +9,10 @@
     169.254.169.254 metadata.google.internal metadata
   '';
 
-  networking.timeServers = ["metadata.google.internal"];
+  networking.timeServers = [ "metadata.google.internal" ];
 
-  environment.etc."sysctl.d/60-gce-network-security.conf".source = "${pkgs.google-guest-configs}/etc/sysctl.d/60-gce-network-security.conf";
+  environment.etc."sysctl.d/60-gce-network-security.conf".source =
+    "${pkgs.google-guest-configs}/etc/sysctl.d/60-gce-network-security.conf";
 
   networking.usePredictableInterfaceNames = false;
 

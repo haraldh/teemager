@@ -2,7 +2,8 @@
   config,
   lib,
   ...
-}: let
+}:
+let
   rootUserDisallowedFields = [
     "password"
     "hashedPassword"
@@ -10,20 +11,22 @@
     "initialHashedPassword"
     "hashedPasswordFile"
   ];
-in {
+in
+{
   assertions = [
     {
       assertion = config.services.getty.autologinUser == null;
       message = "Auto-login must be disabled for zero operator access";
     }
-  ] ++ map (field: {
+  ]
+  ++ map (field: {
     assertion = config.users.users.root.${field} == null;
     message = "Root user must not have a password";
   }) rootUserDisallowedFields;
 
   # Disable all console login services for zero operator access
-  systemd.services."autovt@" = lib.mkForce {};
-  systemd.services."getty@" = lib.mkForce {};
-  systemd.services.getty-static = lib.mkForce {};
-  systemd.services."serial-getty@" = lib.mkForce {};
+  systemd.services."autovt@" = lib.mkForce { };
+  systemd.services."getty@" = lib.mkForce { };
+  systemd.services.getty-static = lib.mkForce { };
+  systemd.services."serial-getty@" = lib.mkForce { };
 }
